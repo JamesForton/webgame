@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IM STILL HERE</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; background: #000; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 20,
+            speed: 5,
+            color: 'blue',
+            bullets: [],
+            fireRate: 200,
+            lastShot: 0,
+            damage: 1,
+            fullAuto: false,
+            spray: 1,
+            shields: 0,
+            grenades: 0,
+            cubes: 0,
+            placedCubes: [],
+            hp: 3,
+            score: 0,
+            invincible: false,
+            invincibleTimer: 0,
+        };
+
+        const enemies = [];
+        const powerUps = [];
+        let level = 1;
+        let gameOver = false;
+        let mouse = { x: 0, y: 0 };
+        let betweenWaves = false;
+        let showShop = false;
+        let enemiesToSpawn = 5;
+        let waveTimer = 0;
+        let enemiesKilledThisWave = 0;
+        const keys = {};
+
+        function spawnEnemy() {
+            const size = 20;
+            const x = Math.random() < 0.5 ? 0 - size : canvas.width + size;
+            const y = Math.random() * canvas.height;
+
+            const enemyType = Math.random();
+            if (enemyType < 0.33) {
+                enemies.push({
+                    x, y, size,
+                    speed: 3 + level * 0.5,
+                    color: 'blue',
+                    hp: 1 + Math.floor(level / 2),
+                    hitboxSize: size * 1.2
+                });
+            } else if (enemyType < 0.66) {
+                enemies.push({
+                    x, y, size,
+                    speed: 1.5 + level * 0.5,
+                    color: 'red',
+                    hp: 2 + Math.floor(level / 2),
+                    hitboxSize: size * 1.2
+                });
+            } else {
+                enemies.push({
+                    x, y, size,
+                    speed: 1 + level * 0.5,
+                    color: 'grey',
+                    hp: 3 + Math.floor(level / 2),
+                    hitboxSize: size * 1.2
+                });
+            }
+        }
+
+        function spawnPowerUp() {
+            const size = 15;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const types = ['fullAuto', 'damage', 'speed', 'shield', 'spray', 'cube', 'grenade'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            powerUps.push({ x, y, size, color: 'yellow', type });
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(enemy.hp, enemy.x - 5, enemy.y + 25);
+            });
+        }
+
+        function drawPowerUps() {
+            powerUps.forEach(powerUp => {
+                ctx.fillStyle = powerUp.color;
+                ctx.beginPath();
+                ctx.arc(powerUp.x, powerUp.y, powerUp.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = 'white';
+            player.bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x - 2, bullet.y - 2, 4, 4);
+            });
+        }
+
+        function drawCubes() {
+            ctx.fillStyle = 'purple';
+            player.placedCubes.forEach(cube => {
+                ctx.fillRect(cube.x - cube.size / 2, cube.y - cube.size / 2, cube.size, cube.size);
+            });
+        }
+
+        function drawStats() {
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText(`Score: ${player.score}`, 10, 30);
+            ctx.fillText(`Level: ${level}`, 10, 60);
+            ctx.fillText(`Damage: ${player.damage}`, 10, 90);
+            ctx.fillText(`Speed: ${player.speed}`, 10, 120);
+            ctx.fillText(`Spray: ${player.spray}`, 10, 150);
+            ctx.fillText(`Shields: ${player.shields}`, 10, 180);
+            ctx.fillText(`Grenades: ${player.grenades}`, 10, 210);
+            ctx.fillText(`Cubes: ${player.cubes}`, 10, 240);
+            ctx.fillText(`Health: ${player.hp}`, 10, 270);
+            ctx.fillText(betweenWaves, 10, 300);
+            ctx.fillText(enemies.every(enemy => enemy.dead), 10, 330)
+        }
+
+        function drawShop() {
+            ctx.fillStyle = 'yellow';
+            ctx.font = '20px Arial';
+            ctx.fillText("Press ESC to close shop", canvas.width / 2 - 150, 50);
+            ctx.fillText("Press 1-6 to buy upgrades", canvas.width / 2 - 160, 80);
+
+            const upgrades = [
+                `1. Full Auto: ${player.fullAuto ? 'Active' : 'Inactive'} - Cost: 100`,
+                `2. Damage: ${player.damage} - Cost: 50`,
+                `3. Speed: ${player.speed} - Cost: 30`,
+                `4. Shield: ${player.shields} - Cost: 60`,
+                `5. Spray: ${player.spray} - Cost: 40`,
+                `6. Grenades: ${player.grenades} - Cost: 50`
+            ];
+
+            upgrades.forEach((upgrade, index) => {
+                ctx.fillText(upgrade, canvas.width / 2 - 150, 120 + (index * 30));
+            });
+        }
+
+        function applyPowerUp(type) {
+            switch (type) {
+                case 'fullAuto':
+                    if (player.fullAuto) {
+                        player.fireRate = Math.max(50, player.fireRate - 50);
+                    } else {
+                        player.fullAuto = true;
+                        player.fireRate = 100;
+                    }
+                    break;
+                case 'damage':
+                    player.damage += 1;
+                    break;
+                case 'speed':
+                    player.speed += 1;
+                    break;
+                case 'shield':
+                    player.shields += 1;
+                    break;
+                case 'spray':
+                    player.spray += 1;
+                    break;
+                case 'cube':
+                    player.cubes += 1;
+                    break;
+                case 'grenade':
+                    player.grenades += 1;
+                    break;
+            }
+        }
+
+        function nextWave() {
+    level++;
+    enemiesToSpawn += 2;
+    enemiesKilledThisWave = 0;
+    betweenWaves = true;  // Start the transition
+    waveTimer = Date.now(); // Start counting time for the next wave
+}
+
+        function handleCollisions() {
+    // Bullets hitting enemies
+    player.bullets.forEach((bullet, bulletIndex) => {
+        enemies.forEach((enemy, enemyIndex) => {
+            const dist = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
+            if (dist < enemy.hitboxSize / 2) {
+                if (player.spray < 10) {
+                    enemy.hp -= player.damage / Math.max(player.spray, 1);  // Prevent division by zero and reduce nerfing
+                } else {
+                    enemy.hp -= player.damage / player.spray;
+                }
+
+                player.bullets.splice(bulletIndex, 1);
+                if (enemy.hp <= 0) {
+                    enemies.splice(enemyIndex, 1);
+                    player.score += 10;
+                    enemiesKilledThisWave++;
+
+                    // Check if all enemies are dead after bullet hit
+                    if (enemies.every(enemy => enemy.hp <= 0)) {
+                        spawnPowerUp();
+                        setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
+                    }
+                }
+            }
+        });
+    });
+
+    // Player colliding with enemies (shield or health hit)
+    enemies.forEach((enemy, enemyIndex) => {
+        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (dist < enemy.hitboxSize / 2) {
+            if (player.shields > 0) {
+                player.shields--;
+                player.invincible = true;
+                player.invincibleTimer = Date.now();
+            } else if (!player.invincible) {
+                player.hp -= 1;
+                player.invincible = true;
+                player.invincibleTimer = Date.now();
+                if (player.hp <= 0) {
+                    gameOver = true;
+                }
+            }
+            enemies.splice(enemyIndex, 1); // Remove the enemy if it collides with the player
+            player.score += 10;
+            enemiesKilledThisWave++;
+
+            // Check if all enemies are dead after player collision
+            if (enemies.every(enemy => enemy.hp <= 0)) {
+                spawnPowerUp();
+                setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
+            }
+        }
+    });
+
+    // Handle cubes killing enemies (same as above)
+    player.placedCubes.forEach((cube, cubeIndex) => {
+        enemies.forEach((enemy, enemyIndex) => {
+            const dist = Math.hypot(cube.x - enemy.x, cube.y - enemy.y);
+            if (dist < cube.size / 2 + enemy.hitboxSize / 2) {
+                enemies.splice(enemyIndex, 1);
+                player.score += 10;
+                enemiesKilledThisWave++;
+
+                // Check if all enemies are dead after cube hit
+                if (enemies.every(enemy => enemy.hp <= 0)) {
+                    spawnPowerUp();
+                    setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
+                }
+            }
+        });
+    });
+
+    // Handle power-ups (same as before)
+    powerUps.forEach((powerUp, index) => {
+        const dist = Math.hypot(player.x - powerUp.x, player.y - powerUp.y);
+        if (dist < player.size / 2 + powerUp.size / 2) {
+            applyPowerUp(powerUp.type);
+            powerUps.splice(index, 1);
+        }
+    });
+}
+
+
+
+function initEventListeners() {
+    canvas.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    });
+
+    document.addEventListener('keydown', e => {
+        keys[e.code] = true;
+        
+        if (e.code === 'KeyB') showShop = true;
+        if (e.code === 'Escape') showShop = false;
+        if (e.code === 'Space') shoot();
+        
+        if (showShop) {
+            switch (e.code) {
+                case 'Digit1':
+                    if (player.score >= 100) {
+                        player.fullAuto = true;
+                        player.score -= 100;
+                    }
+                    break;
+                case 'Digit2':
+                    if (player.score >= 50) {
+                        player.damage += 1;
+                        player.score -= 50;
+                    }
+                    break;
+                case 'Digit3':
+                    if (player.score >= 30) {
+                        player.speed += 1;
+                        player.score -= 30;
+                    }
+                    break;
+                case 'Digit4':
+                    if (player.score >= 60) {
+                        player.shields += 1;
+                        player.score -= 60;
+                    }
+                    break;
+                case 'Digit5':
+                    if (player.score >= 40) {
+                        if (player.spray <= 30)
+                        player.spray += 1;
+                        player.score -= 40;
+                    }
+                    break;
+                case 'Digit6':
+                    if (player.score >= 50) {
+                        player.grenades += 1;
+                        player.score -= 50;
+                    }
+                    break;
+            }
+        }
+
+        if (e.code === 'KeyQ') {
+            if (!gameOver && !betweenWaves && !showShop && player.cubes > 0) {
+                player.placedCubes.push({
+                    x: mouse.x,
+                    y: mouse.y,
+                    size: 30
+                });
+                player.cubes--;
+            }
+        }
+
+        if (e.code === 'KeyG' && player.grenades > 0) {
+            player.grenades--;
+            enemies.forEach(enemy => {
+                const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+                if (dist < 200) {
+                    enemy.hp -= 5;
+                    if (enemy.hp <= 0) {
+                        player.score += 10;
+                        enemiesKilledThisWave++;
+                    }
+                }
+            });
+        }
+    });
+
+    document.addEventListener('keyup', e => {
+        keys[e.code] = false;
+    });
+
+    // Left-click to shoot (outside the keydown event)
+    document.addEventListener('mousedown', e => {
+        if (e.button === 0) { // 0 is the code for the left mouse button
+            shoot();
+        }
+    });
+}
+
+function shoot() {
+    const now = Date.now();
+    if (now - player.lastShot >= player.fireRate) {
+        player.lastShot = now;
+
+        const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+
+        // Base spray cone value (doesn't change unless player.spray is > 0)
+        const sprayCone = Math.PI * 0.05 + player.spray * 0.02;
+
+        for (let i = 0; i < player.spray; i++) {
+            // Calculate a small variation based on the spray cone, but make sure it's within a controlled range
+            const bulletAngle = angle + (Math.random() * sprayCone - sprayCone / 2);
+
+            const dx = Math.cos(bulletAngle);
+            const dy = Math.sin(bulletAngle);
+
+            player.bullets.push({
+                x: player.x,
+                y: player.y,
+                dx: dx,
+                dy: dy,
+                speed: 10,
+            });
+        }
+
+        // If there is no spray (i.e., player.spray is 0), just shoot straight at the target
+        if (player.spray === 0) {
+            player.bullets.push({
+                x: player.x,
+                y: player.y,
+                dx: Math.cos(angle),
+                dy: Math.sin(angle),
+                speed: 10,
+            });
+        }
+    }
+}
+
+
+
+        function update() {
+            if (gameOver) {
+                ctx.fillText(`Game Over`, canvas.width / 2 - 75, canvas.height / 2);
+                return;
+                          }
+            
+            if ((keys.ArrowUp || keys.KeyW) && player.y > 0) player.y -= player.speed;
+            if ((keys.ArrowDown || keys.KeyS) && player.y < canvas.height) player.y += player.speed;
+            if ((keys.ArrowLeft || keys.KeyA) && player.x > 0) player.x -= player.speed;
+            if ((keys.ArrowRight || keys.KeyD) && player.x < canvas.width) player.x += player.speed;
+
+            if (player.fullAuto) shoot();
+
+            player.bullets.forEach(bullet => {
+                bullet.x += bullet.dx * bullet.speed;
+                bullet.y += bullet.dy * bullet.speed;
+            });
+            player.bullets = player.bullets.filter(bullet => 
+                bullet.x > 0 && bullet.x < canvas.width && 
+                bullet.y > 0 && bullet.y < canvas.height
+            );
+
+            enemies.forEach(enemy => {
+                const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                enemy.x += Math.cos(angle) * enemy.speed;
+                enemy.y += Math.sin(angle) * enemy.speed;
+            });
+
+            handleCollisions();
+
+            if (player.invincible && Date.now() - player.invincibleTimer >= 1000) {
+                player.invincible = false;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawEnemies();
+            drawPowerUps();
+            drawBullets();
+            drawCubes();
+            drawStats();
+
+            if (betweenWaves) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '30px Arial';
+                ctx.fillText(`Wave ${level - 1}`, canvas.width / 2 - 75, canvas.height / 2);
+
+                if (Date.now() - waveTimer >= 3000) {
+                    betweenWaves = false;
+                    for (let i = 0; i < enemiesToSpawn; i++) {
+                        spawnEnemy();
+                    }
+                }
+            }
+
+            if (showShop) drawShop();
+            requestAnimationFrame(update);
+        }
+        
+
+        function startGame() {
+            initEventListeners();
+            nextWave();
+            update();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
