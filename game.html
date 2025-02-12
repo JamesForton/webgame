@@ -213,9 +213,9 @@
             const dist = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
             if (dist < enemy.hitboxSize / 2) {
                 if (player.spray < 10) {
-                    enemy.hp -= player.damage / Math.max(player.spray, 1);  // Prevent division by zero and reduce nerfing
+                    enemy.hp -= player.damage
                 } else {
-                    enemy.hp -= player.damage / player.spray;
+                    enemy.hp -= Math.round(player.damage / player.spray);
                 }
 
                 player.bullets.splice(bulletIndex, 1);
@@ -393,7 +393,7 @@ function shoot() {
         const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
 
         // Base spray cone value (doesn't change unless player.spray is > 0)
-        const sprayCone = Math.PI * 0.05 + player.spray * 0.02;
+        const sprayCone = Math.PI * 0.01 + player.spray * 0.02;
 
         for (let i = 0; i < player.spray; i++) {
             // Calculate a small variation based on the spray cone, but make sure it's within a controlled range
