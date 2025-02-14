@@ -293,6 +293,7 @@ enemies.forEach((enemy, enemyIndex) => {
     player.placedCubes.forEach((cube, cubeIndex) => {
         enemies.forEach((enemy, enemyIndex) => {
             const dist = Math.hypot(cube.x - enemy.x, cube.y - enemy.y);
+            if(enemy.color !== 'FireBrick'){
             if (dist < cube.size / 2 + enemy.hitboxSize / 2) {
                 enemies.splice(enemyIndex, 1);
                 player.score += 10;
@@ -304,7 +305,7 @@ enemies.forEach((enemy, enemyIndex) => {
                     setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
                 }
             }
-        });
+        }});
     });
 
     // Handle power-ups (same as before)
