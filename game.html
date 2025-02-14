@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IM STILL HERE</title>
     <style>
         body { margin: 0; overflow: hidden; }
@@ -49,6 +49,12 @@
         let enemiesToSpawn = 5;
         let waveTimer = 0;
         let enemiesKilledThisWave = 0;
+        const priceIncreaseFactor = 1.5; // This is the factor by which the price increases
+        let price2 = 50;
+        let price3 = 30;
+        let price4 = 60;
+        let price5 = 40;
+        let price6 = 50;
         const keys = {};
 
         function spawnEnemy() {
@@ -157,7 +163,7 @@
             ctx.fillText(`Grenades: ${player.grenades}`, 10, 210);
             ctx.fillText(`Cubes: ${player.cubes}`, 10, 240);
             ctx.fillText(`Health: ${player.hp}`, 10, 270);
-            ctx.fillText('Version 1.0', 10, 300)
+            ctx.fillText('Version 1.1', 10, 300)
         }
 
         function drawShop() {
@@ -168,11 +174,11 @@
 
             const upgrades = [
                 `1. Full Auto: ${player.fullAuto ? 'Active' : 'Inactive'} - Cost: 100`,
-                `2. Damage: ${player.damage} - Cost: 50`,
-                `3. Speed: ${player.speed} - Cost: 30`,
-                `4. Shield: ${player.shields} - Cost: 60`,
-                `5. Spray: ${player.spray} - Cost: 40`,
-                `6. Grenades: ${player.grenades} - Cost: 50`
+                `2. Damage: ${player.damage} - Cost: ${price2}`,
+                `3. Speed: ${player.speed} - Cost: ${price3}`,
+                `4. Shield: ${player.shields} - Cost: ${price4}`,
+                `5. Spray: ${player.spray} - Cost: ${price5}`,
+                `6. Grenades: ${player.grenades} - Cost: ${price6}`
             ];
 
             upgrades.forEach((upgrade, index) => {
@@ -333,12 +339,6 @@ function initEventListeners() {
         if (e.code === 'Escape') showShop = false;
         if (e.code === 'Space') shoot();
         
-const priceIncreaseFactor = 1.5; // This is the factor by which the price increases
-let price2 = 50;
-let price3 = 30;
-let price4 = 60;
-let price5 = 40;
-let price6 = 50;
 
 if (showShop) {
     switch (e.code) {
