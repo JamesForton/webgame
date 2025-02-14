@@ -229,7 +229,7 @@ function nextWave() {
                 if (player.spray < 10) {
                     enemy.hp -= player.damage
                 } else {
-                    enemy.hp -= Math.round(player.damage / player.spray);
+                    enemy.hp -= Math.round(player.damage / player.spray) + 1;
                 }
 
                 player.bullets.splice(bulletIndex, 1);
@@ -247,11 +247,11 @@ function nextWave() {
             }
         });
     });
-
-    // Player colliding with enemies (shield or health hit)
-    enemies.forEach((enemy, enemyIndex) => {
-        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < enemy.hitboxSize / 2) {
+enemies.forEach((enemy, enemyIndex) => {
+    const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+    if (dist < enemy.hitboxSize / 2) {
+        // Ensure we don't handle collisions for bosses
+        if (enemy.color !== 'FireBrick') {
             if (player.shields > 0) {
                 player.shields--;
                 player.invincible = true;
@@ -264,7 +264,8 @@ function nextWave() {
                     gameOver = true;
                 }
             }
-            enemies.splice(enemyIndex, 1); // Remove the enemy if it collides with the player
+            // Remove the enemy if it collides with the player
+            enemies.splice(enemyIndex, 1); 
             player.score += 10;
             enemiesKilledThisWave++;
 
@@ -274,7 +275,9 @@ function nextWave() {
                 setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
             }
         }
-    });
+    }
+});
+
 
     // Handle cubes killing enemies (same as above)
     player.placedCubes.forEach((cube, cubeIndex) => {
