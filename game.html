@@ -157,8 +157,7 @@
             ctx.fillText(`Grenades: ${player.grenades}`, 10, 210);
             ctx.fillText(`Cubes: ${player.cubes}`, 10, 240);
             ctx.fillText(`Health: ${player.hp}`, 10, 270);
-            ctx.fillText(betweenWaves, 10, 300);
-            ctx.fillText(enemies.every(enemy => enemy.dead), 10, 330)
+            ctx.fillText('Version 1.0', 10, 300)
         }
 
         function drawShop() {
@@ -269,6 +268,17 @@ enemies.forEach((enemy, enemyIndex) => {
             player.score += 10;
             enemiesKilledThisWave++;
 
+            // Check if all enemies are dead after player collision
+            if (enemies.every(enemy => enemy.hp <= 0)) {
+                spawnPowerUp();
+                setTimeout(nextWave, 3000); // Proceed to next wave after 3 seconds
+            }
+        }
+        else {
+                player.hp -= 1;
+                if (player.hp <= 0) {
+                    gameOver = true;
+                }
             // Check if all enemies are dead after player collision
             if (enemies.every(enemy => enemy.hp <= 0)) {
                 spawnPowerUp();
@@ -409,7 +419,8 @@ function shoot() {
         const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
 
         // Base spray cone value (doesn't change unless player.spray is > 0)
-        const sprayCone = Math.PI * 0.01 + player.spray * 0.02;
+        const maxCone = Math.PI / 6; // 30 degrees in radians
+        const sprayCone = Math.min(Math.PI * 0.01 + player.spray * 0.02, maxCone); // Limit to max 30 degrees
 
         for (let i = 0; i < player.spray; i++) {
             // Calculate a small variation based on the spray cone, but make sure it's within a controlled range
@@ -439,6 +450,7 @@ function shoot() {
         }
     }
 }
+
 
 
 
