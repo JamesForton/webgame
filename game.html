@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.1">
     <title>IM STILL HERE</title>
     <style>
         body { margin: 0; overflow: hidden; }
@@ -333,46 +333,59 @@ function initEventListeners() {
         if (e.code === 'Escape') showShop = false;
         if (e.code === 'Space') shoot();
         
-        if (showShop) {
-            switch (e.code) {
-                case 'Digit1':
-                    if (player.score >= 100) {
-                        player.fullAuto = true;
-                        player.score -= 100;
-                    }
-                    break;
-                case 'Digit2':
-                    if (player.score >= 50) {
-                        player.damage += 1;
-                        player.score -= 50;
-                    }
-                    break;
-                case 'Digit3':
-                    if (player.score >= 30) {
-                        player.speed += 1;
-                        player.score -= 30;
-                    }
-                    break;
-                case 'Digit4':
-                    if (player.score >= 60) {
-                        player.shields += 1;
-                        player.score -= 60;
-                    }
-                    break;
-                case 'Digit5':
-                    if (player.score >= 40) {
-                        player.spray += 1;
-                        player.score -= 40;
-                    }
-                    break;
-                case 'Digit6':
-                    if (player.score >= 50) {
-                        player.grenades += 1;
-                        player.score -= 50;
-                    }
-                    break;
+const priceIncreaseFactor = 1.5; // This is the factor by which the price increases
+let price2 = 50;
+let price3 = 30;
+let price4 = 60;
+let price5 = 40;
+let price6 = 50;
+
+if (showShop) {
+    switch (e.code) {
+        case 'Digit1':
+            if (player.score >= 100) {
+                player.fullAuto = true;
+                player.score -= 100;
             }
-        }
+            break;
+        case 'Digit2':
+            if (player.score >= price2) {
+                player.damage += 1;
+                player.score -= price2;
+                price2 = Math.floor(price2 * priceIncreaseFactor);
+            }
+            break;
+        case 'Digit3':
+            if (player.score >= price3) {
+                player.speed += 1;
+                player.score -= price3;
+                price3 = Math.floor(price3 * priceIncreaseFactor);
+            }
+            break;
+        case 'Digit4':
+            if (player.score >= price4) {
+                player.shields += 1;
+                player.score -= price4;
+                price4 = Math.floor(price4 * priceIncreaseFactor);
+            }
+            break;
+        case 'Digit5':
+            if (player.score >= price5) {
+                player.spray += 1;
+                player.score -= price5;
+                price5 = Math.floor(price5 * priceIncreaseFactor);
+            }
+            break;
+        case 'Digit6':
+            if (player.score >= price6) {
+                player.grenades += 1;
+                player.score -= price6;
+                price6 = Math.floor(price6 * priceIncreaseFactor);
+            }
+            break;
+    }
+}
+
 
         if (e.code === 'KeyQ') {
             if (!gameOver && !betweenWaves && !showShop && player.cubes > 0) {
