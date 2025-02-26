@@ -1,8 +1,6 @@
 # webgame
 
-NEW UPDATES WILL BE ON @EpicPigGuy
-
-EpicPigGuy is my main github account, and so, updates will not be posted here
+Also on @EpicPigGuy
 
 my cube html web game
 
@@ -14,7 +12,5 @@ Q - Place cube on crosshair insta kills enemies, only can be placed at certain t
 
 G - Use grenade does damage to nearby enemies
 
-Spray nerfed, now reduces damage after level 10
 
-Bux fixes
-
+Legacy version rounds spray damage, so you can do 0 damage
