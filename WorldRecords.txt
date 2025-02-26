@@ -1,2 +1,5 @@
-Version 1.0:
+Version 1.1:
 James F: level 40
+
+Version 1 (legacy):
+James F: level 202
